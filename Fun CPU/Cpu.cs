@@ -2,7 +2,7 @@
 
 namespace Fun_CPU;
 
-enum CpuPrivelege
+public enum CpuPrivelege
 {
     User,
     Supervisor,
