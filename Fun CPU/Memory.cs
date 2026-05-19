@@ -8,15 +8,15 @@ public interface IBus
 
 public class SimulatedBusController : IBus
 {
-    private byte[] _memory;
+    private byte[] dataFlow;
 
     public byte ReadByte(int address)
     {
-        return _memory[address];
+        return dataFlow[address];
     }
 
     public void WriteByte(int address, byte value)
     {
-        _memory[address] = value;
+        dataFlow[address] = value;
     }
 }

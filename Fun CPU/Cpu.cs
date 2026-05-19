@@ -2,13 +2,20 @@
 
 namespace Fun_CPU;
 
+enum CpuPrivelege
+{
+    User,
+    Supervisor,
+    Machine
+}
 
 public class Cpu
 {
-    readonly IBus connectedBus;
+    public required IBus memoryBus;
     int Fetch()
     {
-        return 0;
+        var data = memoryBus.ReadByte(0);
+        return data;
     }
     
     void Decode()
