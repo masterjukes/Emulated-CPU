@@ -24,8 +24,13 @@ public enum CpuTrapCause
 
 public class CpuFault : Exception
 {
-    public CpuFault(CpuTrapCause cause)
+    public CpuTrapCause cause;
+    public int info;
+    
+    public CpuFault(CpuTrapCause cause, int info)
     {
+        this.cause = cause;
+        this.info = info;
         
     }
 
