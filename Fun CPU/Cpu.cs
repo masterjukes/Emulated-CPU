@@ -9,6 +9,9 @@ public enum CpuPrivelege
     Machine
 }
 
+
+
+
 public class Cpu
 {
     public required IBus memoryBus;
