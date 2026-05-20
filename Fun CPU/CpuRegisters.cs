@@ -41,7 +41,7 @@ public class CpuCSRs
     {
         var csr = csrFile[index];
         if(Cpu.instance.privilege < csr.minPrivilege)
-            throw new CpuFault(CpuTrapCause.InstructionAccessFault, 0);
+            throw new CpuFault(CpuTrapCause.IllegalInstruction, 0);
         
         if(!csr.readOnly)
             csr.value = value;
@@ -51,7 +51,7 @@ public class CpuCSRs
     {
         var csr = csrFile[index];
         if(Cpu.instance.privilege <  csr.minPrivilege)
-            throw new CpuFault(CpuTrapCause.InstructionAccessFault, 0);
+            throw new CpuFault(CpuTrapCause.IllegalInstruction, 0);
         
         return csr.value;
     }

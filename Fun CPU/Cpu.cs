@@ -20,14 +20,14 @@ public class Cpu
 
     public required CpuCSRs controlStatusRegisters;
     public required CpuGPRs registers;
-    public required IBus memoryBus;
+    public required MemoryBus memoryBus;
     
     
     public static Cpu instance = new Cpu
     {
         controlStatusRegisters = new CpuCSRs(),
         registers = new CpuGPRs(),
-        memoryBus = new SimulatedBusController()
+        memoryBus = new MemoryBus()
     };
     
     int Fetch()
