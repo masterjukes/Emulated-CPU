@@ -1,143 +1,6 @@
 ﻿using Fun_CPU;
 using Fun_CPU.Vga;
 
-public interface IMemoryRegion
-{
-    byte ReadByte(uint offset);
-    void WriteByte(uint offset, byte value);
-    
-    int ReadWord(uint offset);
-    void WriteWord(uint offset, int value);
-    
-}
-
-public sealed class Ram : IMemoryRegion
-{
-    private readonly byte[] data;
-
-    public Ram(uint size)
-    {
-        data = new byte[size];
-    }
-
-    public byte ReadByte(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-
-        return data[(int)offset];
-    }
-
-    public void WriteByte(uint offset, byte value)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)offset);
-
-        data[(int)offset] = value;
-    }
-
-    public int ReadWord(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-        
-        return BitConverter.ToInt32(data, (int)offset);
-    }
-    
-    public void WriteWord(uint offset, int value)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-        
-        var bytes = BitConverter.GetBytes(value);
-        for (int i = 0; i < bytes.Length; i++)
-            data[(int)offset + i] = bytes[i];
-    }
-}
-
-
-public sealed class Rom : IMemoryRegion
-{
-    private readonly byte[] data;
-
-    public Rom(uint size)
-    {
-        data = new byte[size];
-        //data = File.ReadAllBytes("rom.bin");
-    }
-
-    public byte ReadByte(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-
-        return data[(int)offset];
-    }
-
-    public void WriteByte(uint offset, byte value)
-    {
-        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)offset);
-    }
-    
-    public int ReadWord(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-        
-        return BitConverter.ToInt32(data, (int)offset);
-    }
-    
-    public void WriteWord(uint offset, int value)
-    {
-        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)offset);
-    }
-}
-
-
-public sealed class MmioRegion : IMemoryRegion
-{
-    private readonly byte[] data;
-
-    public MmioRegion(uint size)
-    {
-        data = new byte[size];
-    }
-
-    public byte ReadByte(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-
-        return data[(int)offset];
-    }
-
-    public void WriteByte(uint offset, byte value)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)offset);
-
-        data[(int)offset] = value;
-    }
-    
-    public int ReadWord(uint offset)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-        
-        return BitConverter.ToInt32(data, (int)offset);
-    }
-    
-    public void WriteWord(uint offset, int value)
-    {
-        if (offset >= (uint)data.Length)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)offset);
-        
-        var bytes = BitConverter.GetBytes(value);
-        for (int i = 0; i < bytes.Length; i++)
-            data[(int)offset + i] = bytes[i];
-    }
-}
-
 
 public sealed class MMU
 {
@@ -201,76 +64,118 @@ public sealed class MMU
 
 public sealed class MemoryBus
 {
-    private struct Region
-    {
-        public uint start;
-        public uint end;    
-        public IMemoryRegion device;
-    }
 
-    private readonly List<Region> regions = new List<Region>()
-    {
-        new Region { start = 0x00000000u, end = 1u << 26, device = new Ram(1u << 26) },
-        new Region { start = 0x7FFF0000u, end = (uint) (0x7FFF0000u + (1u << 20)), device = new Rom(1u << 20) },
-        new Region { start = 0xA0000000u, end = 0xA0000000 + (1u << 12), device = new VgaDevice() }
-    };
+    
 
-    IMemoryRegion Resolve(uint addr, out uint offset, bool isLoad)
-    {
-        foreach (var r in regions)
-        {
-            if (addr >= r.start && addr < r.end)
-            {
-                offset = addr - r.start;
-                return r.device;
-            }
-        }
-
-        throw new CpuFault(
-            isLoad ? CpuTrapCause.LoadAccessFault : CpuTrapCause.StoreAccessFault,
-            (int)addr
-        );
-    }
+    
     
     private readonly MMU mmu = new();
 
     public MMU MMU => mmu;
 
-    
+    byte[] ram = new byte[64 * 1024 * 1024];
+    byte[] rom = new byte[1 * 1024 * 1024];
+    byte[] dev = new byte[1 * 1024 * 1024];
     
 
-
+    
     public byte ReadByte(uint vaddr, bool willExecute = false)
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
-        var dev = Resolve(paddr, out uint off, true);
-        return dev.ReadByte(off);
+        
+        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+        
+        if(ramRegion)
+            return ram[paddr];
+        if(romRegion)
+            return rom[paddr - 0x7FFF0000];
+        if(devRegion)
+            return dev[paddr - 0xF0000000];
+        
+        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)vaddr);
     }
 
     public void WriteByte(uint vaddr, byte value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
-        var dev = Resolve(paddr, out uint off, false);
-        dev.WriteByte(off, value);
+        
+        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+        
+        if(ramRegion)
+            ram[paddr] = value;
+        if(devRegion)
+            dev[paddr - 0xF0000000] = value;;
+        
+        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)vaddr);
+;
     }
 
     public uint ReadWord(uint vaddr, bool willExecute = false)
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
-        var dev = Resolve(paddr, out uint off, true);
-        return (uint)dev.ReadWord(off);
+        
+        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+        
+        if(ramRegion)
+            return ram[paddr] | (uint)ram[paddr + 1] << 8 | (uint)ram[paddr + 2] << 16 | (uint)ram[paddr + 3] << 24;
+        if(romRegion)
+            return rom[paddr - 0x7FFF0000] | (uint)rom[paddr - 0x7FFF0000 + 1] << 8 | (uint)rom[paddr - 0x7FFF0000 + 2] << 16 | (uint)rom[paddr - 0x7FFF0000 + 3] << 24;
+        if(devRegion)
+            return dev[paddr - 0xF0000000] | (uint)dev[paddr - 0xF0000000 + 1] << 8 | (uint)dev[paddr - 0xF0000000 + 2] << 16 | (uint)dev[paddr - 0xF0000000 + 3] << 24    ;
+        
+        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)vaddr);
+
     }
     
     public uint ReadWordPhys(uint paddr)
     {
-        var dev = Resolve(paddr, out uint off, true);
-        return (uint)dev.ReadWord(off);
+        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+        
+        if(ramRegion)
+            return ram[paddr] | (uint)ram[paddr + 1] << 8 | (uint)ram[paddr + 2] << 16 | (uint)ram[paddr + 3] << 24;
+        if(romRegion)
+            return rom[paddr - 0x7FFF0000] | (uint)rom[paddr - 0x7FFF0000 + 1] << 8 | (uint)rom[paddr - 0x7FFF0000 + 2] << 16 | (uint)rom[paddr - 0x7FFF0000 + 3] << 24;
+        if(devRegion)
+            return dev[paddr - 0xF0000000] | (uint)dev[paddr - 0xF0000000 + 1] << 8 | (uint)dev[paddr - 0xF0000000 + 2] << 16 | (uint)dev[paddr - 0xF0000000 + 3] << 24    ;
+        
+        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)paddr);
     }
     
     public void WriteWord(uint vaddr, uint value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
-        var dev = Resolve(paddr, out uint off, false);
-        dev.WriteWord(off, (int)value);
+        
+        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+
+        var bytes = BitConverter.GetBytes(value);
+        
+        if (ramRegion)
+        {
+            ram[paddr] = bytes[0];
+            ram[paddr + 1] = bytes[1];
+            ram[paddr + 2] = bytes[2];
+            ram[paddr + 3] = bytes[3];
+        }
+
+        if (devRegion)
+        {
+            dev[paddr - 0xF0000000] = bytes[0];
+            dev[paddr - 0xF0000000 + 1] = bytes[1];
+            dev[paddr - 0xF0000000 + 2] = bytes[2];
+            dev[paddr - 0xF0000000 + 3] = bytes[3];
+        }
+        
+        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)vaddr);
+       
     }
 }
