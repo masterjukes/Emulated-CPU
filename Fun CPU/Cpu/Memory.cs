@@ -64,10 +64,6 @@ public sealed class MMU
 
 public sealed class MemoryBus
 {
-
-    
-
-    
     
     private readonly MMU mmu = new();
 
@@ -75,7 +71,7 @@ public sealed class MemoryBus
 
     byte[] ram = new byte[64 * 1024 * 1024];
     byte[] rom = new byte[1 * 1024 * 1024];
-    byte[] dev = new byte[1 * 1024 * 1024];
+    public byte[] dev = new byte[1 * 1024 * 1024];
     
 
     
