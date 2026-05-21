@@ -1,4 +1,5 @@
 ﻿using Fun_CPU;
+using Fun_CPU.Vga;
 
 public interface IMemoryRegion
 {
@@ -10,7 +11,7 @@ public interface IMemoryRegion
     
 }
 
-public class Ram : IMemoryRegion
+public sealed class Ram : IMemoryRegion
 {
     private readonly byte[] data;
 
@@ -55,13 +56,14 @@ public class Ram : IMemoryRegion
 }
 
 
-public class Rom : IMemoryRegion
+public sealed class Rom : IMemoryRegion
 {
     private readonly byte[] data;
 
     public Rom(uint size)
     {
         data = new byte[size];
+        //data = File.ReadAllBytes("rom.bin");
     }
 
     public byte ReadByte(uint offset)
@@ -92,7 +94,7 @@ public class Rom : IMemoryRegion
 }
 
 
-public class MmioRegion : IMemoryRegion
+public sealed class MmioRegion : IMemoryRegion
 {
     private readonly byte[] data;
 
@@ -137,7 +139,7 @@ public class MmioRegion : IMemoryRegion
 }
 
 
-public class MMU
+public sealed class MMU
 {
     public class PageTableEntry
     {
@@ -165,6 +167,9 @@ public class MMU
     public uint Translate(uint vaddr, AccessType accessType)
     {
 
+        if(Cpu.instance.controlStatusRegisters.satp.value == 0)
+            return vaddr;
+        
         uint vpn = vaddr >> 12;
         uint offset = vaddr & 0xFFF;
 
@@ -172,7 +177,7 @@ public class MMU
 
         uint pteAddr = root + vpn * 4;
 
-        uint pteRaw = (uint) Cpu.instance.memoryBus.ReadWord(pteAddr);
+        uint pteRaw = (uint) Cpu.instance.memoryBus.ReadWordPhys(pteAddr);
 
         PageTableEntry pte = Decode(pteRaw);
 
@@ -194,7 +199,7 @@ public class MMU
 }
 
 
-public class MemoryBus
+public sealed class MemoryBus
 {
     private struct Region
     {
@@ -207,7 +212,7 @@ public class MemoryBus
     {
         new Region { start = 0x00000000u, end = 1u << 26, device = new Ram(1u << 26) },
         new Region { start = 0x7FFF0000u, end = (uint) (0x7FFF0000u + (1u << 20)), device = new Rom(1u << 20) },
-        new Region { start = 0xA0000000u, end = 0xA0000000 + (1u << 12), device = new MmioRegion(1u << 12) }
+        new Region { start = 0xA0000000u, end = 0xA0000000 + (1u << 12), device = new VgaDevice() }
     };
 
     IMemoryRegion Resolve(uint addr, out uint offset, bool isLoad)
@@ -252,6 +257,12 @@ public class MemoryBus
     public uint ReadWord(uint vaddr, bool willExecute = false)
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
+        var dev = Resolve(paddr, out uint off, true);
+        return (uint)dev.ReadWord(off);
+    }
+    
+    public uint ReadWordPhys(uint paddr)
+    {
         var dev = Resolve(paddr, out uint off, true);
         return (uint)dev.ReadWord(off);
     }

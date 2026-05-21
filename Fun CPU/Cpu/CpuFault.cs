@@ -24,6 +24,7 @@ public enum CpuTrapCause
 
 public class CpuFault : Exception
 {
+    public static int faultCount = 0;
     public CpuTrapCause cause;
     public int info;
     
@@ -31,6 +32,7 @@ public class CpuFault : Exception
     {
         this.cause = cause;
         this.info = info;
+        faultCount++;
         
     }
 

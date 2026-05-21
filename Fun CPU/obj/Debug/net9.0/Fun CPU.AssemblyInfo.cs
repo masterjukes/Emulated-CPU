@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Fun CPU")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98442f2978d2685249184a6d115ee105a9fb1e42")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+501fa9556294f7c0b78c24339c352b1ca0bef0d1")]
 [assembly: System.Reflection.AssemblyProductAttribute("Fun CPU")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Fun CPU")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

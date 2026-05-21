@@ -2,10 +2,18 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <UseWindowsForms>true</UseWindowsForms>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <RootNamespace>Fun_CPU</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="sdl2" Version="2.0.5" />
+      <PackageReference Include="SDL2-CS" Version="2.0.0" />
+      <PackageReference Include="sdl2_ttf.v140" Version="2.0.14" />
+    </ItemGroup>
 
 </Project>

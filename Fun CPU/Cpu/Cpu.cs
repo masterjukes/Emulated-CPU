@@ -1,4 +1,5 @@
-﻿using System.Runtime.Intrinsics.Arm;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.Arm;
 
 namespace Fun_CPU;
 
@@ -76,7 +77,7 @@ enum OpCode
     DEC = 0x30, // Decrement register/memory
 };
 
-public class Cpu
+public sealed class Cpu
 {
     public CpuPrivelege privilege;
     public bool[] flags = new bool[32];
@@ -86,6 +87,9 @@ public class Cpu
     public required CpuCSRs controlStatusRegisters;
     public required CpuGPRs registers;
     public required MemoryBus memoryBus;
+    
+    
+    byte[] fetchBuffer = new byte[4];
 
 
     public static Cpu instance = new Cpu
@@ -101,7 +105,8 @@ public class Cpu
         
         try
         {
-            Execute(Fetch());
+            Fetch();
+            Execute();
             PC += 4;
         }
         catch (CpuFault fault)
@@ -114,15 +119,14 @@ public class Cpu
         
     }
 
-    byte[] Fetch()
+    void Fetch()
     {
-        var opcode = memoryBus.ReadByte(PC);
-        var operand1 = memoryBus.ReadByte(PC + 1);
-        var operand2 = memoryBus.ReadByte(PC + 2);
-        var operand3 = memoryBus.ReadByte(PC + 3);
-
-        return new[] { opcode, operand1, operand2, operand3 };
+        fetchBuffer[0] = memoryBus.ReadByte(PC, true);
+        fetchBuffer[1] = memoryBus.ReadByte(PC + 1, true);
+        fetchBuffer[2] = memoryBus.ReadByte(PC + 2, true);
+        fetchBuffer[3] = memoryBus.ReadByte(PC + 3, true);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
     bool IsValidRegister(byte reg)
     {
@@ -130,22 +134,25 @@ public class Cpu
             throw new CpuFault(CpuTrapCause.IllegalInstruction, 0);
         return true;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
     void set_reg(byte reg, uint value)
     {
         registers[reg] = (int) value;
     }
-    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     uint get_reg(byte reg)
     {
         return (uint) registers[reg];
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void writeBytetoRegister(byte reg, int value)
     {
         registers[reg] = value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     byte readBytefromRegister(byte reg)
     {
         return (byte) registers[reg];
@@ -163,13 +170,15 @@ public class Cpu
     
 
 
-    void Execute(byte[] instruction)
+    void Execute()
     {
+        var instruction = fetchBuffer;
         var op = (OpCode)instruction[0];
         var opand1 = instruction[1];
         var opand2 = instruction[2];
         var opand3 = instruction[3];
-        var data = instruction;
+        var data = instruction; // [ 0, 1, 2, 3]
+        data[0] = 0;
 
 
         switch (op)
