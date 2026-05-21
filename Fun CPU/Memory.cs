@@ -249,17 +249,17 @@ public class MemoryBus
         dev.WriteByte(off, value);
     }
 
-    public int ReadWord(uint vaddr, bool willExecute = false)
+    public uint ReadWord(uint vaddr, bool willExecute = false)
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
         var dev = Resolve(paddr, out uint off, true);
-        return dev.ReadWord(off);
+        return (uint)dev.ReadWord(off);
     }
     
-    public void WriteWord(uint vaddr, int value)
+    public void WriteWord(uint vaddr, uint value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
         var dev = Resolve(paddr, out uint off, false);
-        dev.WriteWord(off, value);
+        dev.WriteWord(off, (int)value);
     }
 }

@@ -62,7 +62,7 @@ public class CpuCSRs
 }
 public class CpuGPRs
 {
-    private int[] gpr = new int[24];
+    private int[] gpr = new int[32];
 
     public int this[int index]
     {
@@ -70,8 +70,8 @@ public class CpuGPRs
         set => gpr[index] = value;
     }
     
-    public int SP
+    public uint SP
     {
-        get => gpr[24]; set => gpr[24] = value;
+        get => (uint)gpr[24]; set => gpr[24] = (int)value;
     }
 }
