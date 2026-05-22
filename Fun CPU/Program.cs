@@ -27,12 +27,12 @@ class Program
         {
             while (true)
             {
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < 1_000_000; i++)
                 {
                     Cpu.instance.StepClock();
                     //Thread.Sleep(100);
                 }
-                //Console.Clear();
+                Console.Clear();
                 Console.WriteLine(Cpu.instance.controlStatusRegisters.cycle.value);
             }
         }).Start();
