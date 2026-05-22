@@ -22,18 +22,22 @@ public enum CpuTrapCause
     StorePageFault
 }
 
-public class CpuFault : Exception
-{
-    public static int faultCount = 0;
-    public CpuTrapCause cause;
-    public int info;
-    
-    public CpuFault(CpuTrapCause cause, int info)
-    {
-        this.cause = cause;
-        this.info = info;
-        faultCount++;
-        
-    }
 
+
+public class Fault
+{
+    
+    public static int faultCount = 0;
+    public static CpuTrapCause cause;
+    public static int info;
+
+    public static void FaultCpu(CpuTrapCause cause, int info)
+    {
+        Cpu.instance.faultPending = true;
+        faultCount++;
+        Fault.cause = cause;
+        Fault.info = info;
+    }
+    
+    
 }

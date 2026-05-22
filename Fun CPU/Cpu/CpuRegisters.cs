@@ -40,9 +40,12 @@ public class CpuCSRs
     public void CSRWrite(int index, int value)
     {
         var csr = csrFile[index];
-        if(Cpu.instance.privilege < csr.minPrivilege)
-            throw new CpuFault(CpuTrapCause.IllegalInstruction, 0);
-        
+        if (Cpu.instance.privilege < csr.minPrivilege)
+        {
+            Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
+            return;
+        }
+
         if(!csr.readOnly)
             csr.value = value;
     }
@@ -50,9 +53,12 @@ public class CpuCSRs
     public int CSRRead(int index)
     {
         var csr = csrFile[index];
-        if(Cpu.instance.privilege <  csr.minPrivilege)
-            throw new CpuFault(CpuTrapCause.IllegalInstruction, 0);
-        
+        if (Cpu.instance.privilege < csr.minPrivilege)
+        {
+            Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
+            return 0;
+        }
+
         return csr.value;
     }
     

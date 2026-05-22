@@ -45,17 +45,17 @@ public sealed class MMU
         PageTableEntry pte = Decode(pteRaw);
 
         if (!pte.valid)
-            throw new CpuFault(CpuTrapCause.LoadPageFault, (int)vaddr);
+            Fault.FaultCpu(CpuTrapCause.LoadPageFault, (int)vaddr);
         
         
         if (accessType == AccessType.Write && !pte.writable)
-            throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)vaddr);
+            Fault.FaultCpu(CpuTrapCause.StoreAccessFault, (int)vaddr);
 
         if (accessType == AccessType.Read && !pte.readable)
-            throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)vaddr);
+            Fault.FaultCpu(CpuTrapCause.LoadAccessFault, (int)vaddr);
 
         if (accessType == AccessType.Execute && !pte.executable)
-            throw new CpuFault(CpuTrapCause.InstructionAccessFault, (int)vaddr);
+            Fault.FaultCpu(CpuTrapCause.InstructionAccessFault, (int)vaddr);
 
         return (pte.physicalPage << 12) | offset;
     }
@@ -70,8 +70,15 @@ public sealed class MemoryBus
     public MMU MMU => mmu;
 
     byte[] ram = new byte[64 * 1024 * 1024];
-    byte[] rom = new byte[1 * 1024 * 1024];
-    public byte[] dev = new byte[1 * 1024 * 1024];
+    byte[] rom = new byte[0x800FFFFF - 0x7FFF0000];
+    public byte[] dev = new byte[24 * 1024 * 1024];
+    
+    public MemoryBus()
+    {
+        var romData = File.ReadAllBytes("rom.bin");
+        for(int i = 0; i < romData.Length; i++)
+            rom[i] = romData[i];
+    }
     
 
     
@@ -79,7 +86,7 @@ public sealed class MemoryBus
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
         
-        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
         var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
         
@@ -90,14 +97,15 @@ public sealed class MemoryBus
         if(devRegion)
             return dev[paddr - 0xF0000000];
         
-        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)vaddr);
+        Fault.FaultCpu(CpuTrapCause.LoadAccessFault, (int)vaddr);
+        return 0;
     }
 
     public void WriteByte(uint vaddr, byte value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
         
-        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
         var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
         
@@ -106,7 +114,8 @@ public sealed class MemoryBus
         if(devRegion)
             dev[paddr - 0xF0000000] = value;;
         
-        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)vaddr);
+        if(romRegion)
+            Fault.FaultCpu(CpuTrapCause.StoreAccessFault, (int)vaddr);
 ;
     }
 
@@ -114,7 +123,7 @@ public sealed class MemoryBus
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
         
-        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
         var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
         
@@ -125,13 +134,13 @@ public sealed class MemoryBus
         if(devRegion)
             return dev[paddr - 0xF0000000] | (uint)dev[paddr - 0xF0000000 + 1] << 8 | (uint)dev[paddr - 0xF0000000 + 2] << 16 | (uint)dev[paddr - 0xF0000000 + 3] << 24    ;
         
-        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)vaddr);
-
+        Fault.FaultCpu(CpuTrapCause.LoadAccessFault, (int)vaddr);
+        return 0;
     }
     
     public uint ReadWordPhys(uint paddr)
     {
-        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
         var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
         
@@ -142,14 +151,15 @@ public sealed class MemoryBus
         if(devRegion)
             return dev[paddr - 0xF0000000] | (uint)dev[paddr - 0xF0000000 + 1] << 8 | (uint)dev[paddr - 0xF0000000 + 2] << 16 | (uint)dev[paddr - 0xF0000000 + 3] << 24    ;
         
-        throw new CpuFault(CpuTrapCause.LoadAccessFault, (int)paddr);
+        Fault.FaultCpu(CpuTrapCause.LoadAccessFault, (int)paddr);
+        return 0;
     }
     
     public void WriteWord(uint vaddr, uint value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
         
-        var ramRegion = paddr > 0 && paddr < 0x4000000;
+        var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
         var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
 
@@ -171,7 +181,8 @@ public sealed class MemoryBus
             dev[paddr - 0xF0000000 + 3] = bytes[3];
         }
         
-        throw new CpuFault(CpuTrapCause.StoreAccessFault, (int)vaddr);
+        if (romRegion)
+            Fault.FaultCpu(CpuTrapCause.StoreAccessFault, (int)vaddr);
        
     }
 }
