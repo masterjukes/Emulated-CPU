@@ -99,30 +99,6 @@ public class VgaDevice : MMIODevice
         var cursorVisible = (controlByte & 0x02) == 2;
         cursorBlinking = (controlByte & 0x04) == 4;
         
-        
-        int addr = textModeBase;
-
-        const string mystr =
-            "VGA Text mode. this is a test for VGA text mode, 1024x768 16 color per channel. 80x25 with a 256 character ascii VGA font.";
-        
-        for (int i = 0; i < mystr.Length; i++)
-        {
-            Cpu.instance.memoryBus.dev[addr + i * 2] = (byte)mystr[i];
-            Cpu.instance.memoryBus.dev[addr + i * 2 + 1] = 0b0000_1111;
-        }
-        
-        Cpu.instance.memoryBus.dev[(addr + mystr.Length * 2)] = (byte) 0xDD;
-        Cpu.instance.memoryBus.dev[(addr + mystr.Length * 2) + 1] = 0b1000_1111;
-        
-        for (int i = 0; i < 512; i+=2)
-        {
-            Cpu.instance.memoryBus.dev[((addr + mystr.Length * 2) + 2) + i] = (byte)(i / 2);
-            Cpu.instance.memoryBus.dev[((addr + mystr.Length * 2) + 3) + i] = 0x0F;
-
-        }
-        
-        
-
         if (textMode)
             RenderTextMode();
         else
@@ -216,7 +192,7 @@ public class VgaDevice : MMIODevice
                 Brush bgBrush = palette[bg];
                 
                 int screenOffsetX = 0;
-                int screenOffsetY = 0;
+                int screenOffsetY = 1;
                 
                 int px = screenOffsetX + x * charWidth;
                 int py = screenOffsetY + y * charHeight;
