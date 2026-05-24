@@ -58,14 +58,14 @@ enum OpCode
     POP = 0x22,
 
     //DATA MOVEMENT BYTE
-    STORE = 0x23, //MOV BYTE PTR [%0], %1
-    LOAD = 0x24, //MOV BYTE PTR %0, [%1]
-    MOV = 0x25, //MOV %0, #4142
+    STORE = 0x23, 
+    LOAD = 0x24, 
+    MOV = 0x25, 
 
     //DATA MOVEMENT DWORD
-    STORE_L = 0x26, //MOV DWORD PTR [%0], %1
-    LOAD_L = 0x27, //MOV DWORD PTR %0, [%1]
-    MOV_L = 0x28, //MOV %0, #41424344
+    STORE_L = 0x26, 
+    LOAD_L = 0x27, 
+    MOV_L = 0x28, 
 
     //SYSTEM
     NOP = 0x29,
@@ -591,10 +591,10 @@ public sealed class Cpu
     void HandleTrap()
     {
         faultPending = false;
+        if(Fault.cause == CpuTrapCause.EnvironmentCallUser && controlStatusRegisters.ie.value == 0) return; // Interrupts are disabled so just ignore it
         
         controlStatusRegisters.epc = controlStatusRegisters.epc with { value = (int)nextPC };
         
-
         controlStatusRegisters.cause = controlStatusRegisters.cause with { value = (int)Fault.cause };
 
         controlStatusRegisters.tval = controlStatusRegisters.tval with { value = Fault.info };
