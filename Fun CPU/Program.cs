@@ -23,6 +23,7 @@ class Program
     {
 
         Cpu.instance.PC = 0x7FFF0000;
+        Cpu.instance.nextPC = 0x7FFF0000;
         new Thread(() =>
         {
             while (true)

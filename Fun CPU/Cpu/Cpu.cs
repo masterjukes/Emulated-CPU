@@ -6,7 +6,6 @@ namespace Fun_CPU;
 public enum CpuPrivelege
 {
     User,
-    Supervisor,
     Machine
 }
 
@@ -75,6 +74,17 @@ enum OpCode
     //INCREMENT AND DECREMENT
     INC = 0x2F, // Increment register/memory
     DEC = 0x30, // Decrement register/memory
+    
+    
+    //PRIVELAGE INSTRUCITONS
+    
+    CSRW = 0xF0,
+    CSRR = 0xF1,
+    CSRWI = 0xF2,
+    ERET = 0xF3,
+    ECALL = 0xF4,
+    
+    
 };
 
 public sealed class Cpu
@@ -83,13 +93,13 @@ public sealed class Cpu
     public bool[] flags = new bool[32];
     public uint PC;
     bool halted;
+    public uint nextPC;
 
     public required CpuCSRs controlStatusRegisters;
     public required CpuGPRs registers;
     public required MemoryBus memoryBus;
     
     public bool faultPending = false;
-    int pcUpdate = 0;
     
     
     byte[] fetchBuffer = new byte[6];
@@ -138,7 +148,7 @@ public sealed class Cpu
         }
 
 
-        PC += (uint) pcUpdate;
+        PC = nextPC;
 
         controlStatusRegisters.cycle =
             controlStatusRegisters.cycle with { value = controlStatusRegisters.cycle.value + 1 };
@@ -235,141 +245,141 @@ public sealed class Cpu
             case OpCode.ADDL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) + GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.SUBL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) - GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.MULL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) * GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.DIVL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 if (GetReg(opand3) == 0) return;
                 SetReg(opand1, GetReg(opand2) / GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.MODL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 if (GetReg(opand3) == 0) return;
                 SetReg(opand1, GetReg(opand2) % GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.ANDL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) & GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.ORL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) | GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.XORL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) ^ GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.NOTL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 SetReg(opand1, ~GetReg(opand2));
-                pcUpdate = 3;
+                nextPC += 3;
                 break;
 
             case OpCode.SHLL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) << (int)GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.SHRL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 SetReg(opand1, GetReg(opand2) >> (int)GetReg(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.ADD:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1,  ReadByteFromRegister(opand2) + ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.SUB:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) - ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.MUL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) * ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.DIV:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 if (ReadByteFromRegister(opand3) == 0) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) / ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.MOD:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 if (ReadByteFromRegister(opand3) == 0) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) % ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.AND:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) & ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.OR:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) | ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.XOR:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) ^ ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.NOT:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 WriteByteToRegister(opand1, ~ReadByteFromRegister(opand2));
-                pcUpdate = 3;
+                nextPC += 3;
                 break;
 
             case OpCode.SHL:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) << ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.SHR:
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2) || !IsValidRegister(opand3)) return;
                 WriteByteToRegister(opand1, ReadByteFromRegister(opand2) >> ReadByteFromRegister(opand3));
-                pcUpdate = 4;
+                nextPC += 4;
                 break;
 
             case OpCode.CMP:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 if (GetReg(opand1) == GetReg(opand2))
                 {
@@ -387,73 +397,71 @@ public sealed class Cpu
                 break;
 
             case OpCode.JMP:
-                pcUpdate = 0;
+                nextPC += 0;
                 if (!IsValidRegister(opand1)) return;
-                PC = GetReg(opand1);
+                nextPC = GetReg(opand1);
                 break;
 
             case OpCode.JEQ:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[0])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
+                    nextPC += 0;
                 }
 
                 break;
 
             case OpCode.JNE:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[1])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
                 }
 
                 break;
 
             case OpCode.JGT:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[4])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
                 }
 
                 break;
 
             case OpCode.JLT:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[3])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
+                    nextPC += 0;
                 }
 
                 break;
 
             case OpCode.JGE:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[5])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
+                    nextPC += 0;
                 }
 
                 break;
 
             case OpCode.JLE:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 if (flags[4])
                 {
-                    PC = GetReg(opand1);
-                    pcUpdate = 0;
+                    nextPC = GetReg(opand1);
+                    nextPC += 0;
                 }
                 
                 
@@ -461,91 +469,119 @@ public sealed class Cpu
                 break;
 
             case OpCode.CALL:
-                pcUpdate = 0;
+                nextPC += 0;
                 registers.SP -= 4;
                 memoryBus.WriteWord(registers.SP, PC + 2);
-                PC = GetReg(opand1);
+                nextPC = GetReg(opand1);
                 break;
 
             case OpCode.RET:
-                pcUpdate = 0;
-                PC = memoryBus.ReadWord(registers.SP);
+                nextPC += 0;
+                nextPC = memoryBus.ReadWord(registers.SP);
                 registers.SP += 4;
                 break;
 
             case OpCode.PUSH:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 registers.SP -= 4;
                 memoryBus.WriteWord(registers.SP, GetReg(opand1));
                 break;
 
             case OpCode.POP:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 SetReg(opand1, memoryBus.ReadWord(registers.SP));
                 registers.SP += 4;
                 break;
 
             case OpCode.STORE:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand2)) return;
                 memoryBus.WriteByte(GetReg(opand1), ReadByteFromRegister(opand2));
                 break;
 
             case OpCode.LOAD:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 WriteByteToRegister(opand1, memoryBus.ReadByte(GetReg(opand2)));
                 break;
 
             case OpCode.MOV:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand1)) return;
                 WriteByteToRegister(opand1, opand2);
                 break;
 
             case OpCode.STORE_L:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 memoryBus.WriteWord(GetReg(opand1), GetReg(opand2));
                 break;
 
             case OpCode.LOAD_L:
-                pcUpdate = 3;
+                nextPC += 3;
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 SetReg(opand1, memoryBus.ReadWord(GetReg(opand2)));
                 break;
 
             case OpCode.MOV_L:
-                pcUpdate = 6;
+                nextPC += 6;
                 if (!IsValidRegister(opand1)) return;
                 SetReg(opand1, (uint)BitConverter.ToInt32(data, 0));
                 break;
 
             case OpCode.NOP:
-                pcUpdate = 1;
+                nextPC += 1;
                 break;
 
             case OpCode.HALT:
-                pcUpdate = 1;
+                nextPC += 1;
                 halted = true;
                 break;
 
             case OpCode.INC:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 SetReg(opand1, GetReg(opand1) + 1);
                 break;
 
             case OpCode.DEC:
-                pcUpdate = 2;
+                nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
                 SetReg(opand1, GetReg(opand1) - 1);
                 break;
+            
+            case OpCode.CSRR:
+                SetReg(opand1, controlStatusRegisters.CSRRead(opand2));
+                nextPC += 3;
+                break;
+            
+            case OpCode.CSRW:
+                controlStatusRegisters.CSRWrite(opand1, (int) GetReg(opand2));
+                nextPC += 3;
+                break;
+            
+            case OpCode.CSRWI:
+                controlStatusRegisters.CSRWrite(opand1, opand2);
+                nextPC += 6;
+                break;
+            
+            case OpCode.ECALL:
+                Fault.FaultCpu(CpuTrapCause.EnvironmentCallUser, 0);
+                nextPC = PC + 1;
+                break;
+            
+            case OpCode.ERET:
+                privilege = CpuPrivelege.User;
+                nextPC = (uint) controlStatusRegisters.epc.value;
+                break;
+                
+                
+                
 
             default:
-                pcUpdate = 1;
+                nextPC += 1;
                 Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
                 break;
         }
@@ -556,18 +592,15 @@ public sealed class Cpu
     {
         faultPending = false;
         
-        controlStatusRegisters.epc = controlStatusRegisters.epc with { value = (int)PC };
+        controlStatusRegisters.epc = controlStatusRegisters.epc with { value = (int)nextPC };
+        
 
         controlStatusRegisters.cause = controlStatusRegisters.cause with { value = (int)Fault.cause };
 
         controlStatusRegisters.tval = controlStatusRegisters.tval with { value = Fault.info };
 
-        privilege = privilege switch
-        {
-            CpuPrivelege.User => CpuPrivelege.Supervisor,
-            _ => CpuPrivelege.Machine
-        };
+        privilege = CpuPrivelege.Machine;
 
-        PC = (uint)controlStatusRegisters.tvec.value;
+        nextPC = (uint)controlStatusRegisters.tvec.value;
     }
 }

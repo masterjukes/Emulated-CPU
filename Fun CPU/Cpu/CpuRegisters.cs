@@ -6,7 +6,7 @@ public struct CSR
     public CpuPrivelege minPrivilege;
     public bool readOnly;
     
-    public CSR(CpuPrivelege minPrivilege, bool readOnly)
+    public CSR(CpuPrivelege minPrivilege, bool readOnly = false)
     {
         this.minPrivilege = minPrivilege;
         this.readOnly = readOnly;
@@ -40,7 +40,7 @@ public class CpuCSRs
     public void CSRWrite(int index, int value)
     {
         var csr = csrFile[index];
-        if (Cpu.instance.privilege < csr.minPrivilege)
+        if (Cpu.instance.privilege < CpuPrivelege.Machine)
         {
             Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
             return;
@@ -50,16 +50,16 @@ public class CpuCSRs
             csr.value = value;
     }
     
-    public int CSRRead(int index)
+    public uint CSRRead(int index)
     {
         var csr = csrFile[index];
-        if (Cpu.instance.privilege < csr.minPrivilege)
+        if (Cpu.instance.privilege < CpuPrivelege.Machine)
         {
             Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
             return 0;
         }
 
-        return csr.value;
+        return (uint)csr.value;
     }
     
     
