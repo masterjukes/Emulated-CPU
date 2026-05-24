@@ -553,18 +553,33 @@ public sealed class Cpu
                 break;
             
             case OpCode.CSRR:
-                SetReg(opand1, controlStatusRegisters.CSRRead(opand2));
                 nextPC += 3;
+                if (privilege == CpuPrivelege.User)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                SetReg(opand1, controlStatusRegisters.CSRRead(opand2));
                 break;
             
             case OpCode.CSRW:
-                controlStatusRegisters.CSRWrite(opand1, (int) GetReg(opand2));
                 nextPC += 3;
+                if (privilege == CpuPrivelege.User)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                controlStatusRegisters.CSRWrite(opand1, (int) GetReg(opand2));
                 break;
             
             case OpCode.CSRWI:
-                controlStatusRegisters.CSRWrite(opand1, opand2);
                 nextPC += 6;
+                if (privilege == CpuPrivelege.User)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                controlStatusRegisters.CSRWrite(opand1, opand2);
                 break;
             
             case OpCode.ECALL:
@@ -573,6 +588,12 @@ public sealed class Cpu
                 break;
             
             case OpCode.ERET:
+                nextPC += 1;
+                if (privilege == CpuPrivelege.User)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
                 privilege = CpuPrivelege.User;
                 nextPC = (uint) controlStatusRegisters.epc.value;
                 break;
