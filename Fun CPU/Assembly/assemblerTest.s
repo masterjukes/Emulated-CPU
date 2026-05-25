@@ -1,78 +1,42 @@
-@offset 2147418112
+@const VGA_CTRL_BYTE 0xF0000000
+@const VGA_TEXT_ADDR 0xF0180001
+@const VGA_GRAPHICS_ADDR 0xF0000001
+@const VGA_TEXT_NOBLINK 0b00000001
+@const VGA_TEXT_BLINK 0b00000101
+@const VGA_GRAPHICS_ENABLE 0x0
 
+@const 
 
-MOVL %24 0xFFFFF
-MOVL %1 0xF0000000
-MOVL %14 0xFF
-STORE %1 %14
-
-MOVL %2 0xF0180001
-MOVL %14 0x0F
-MOVL %3 0xDEADBEEF
-MOVL %20 .output
-
-
-MOVL %21 .PUTSTR
-CALL %21
-
-if %3 >= %4
-    MOVL %14 0xDEADBEEF
-    if %3 == %14
-        SUB %3 %4 %5
-    end
-    MUL %1 %2 %3
-else
-ADDL %5 %3 %4
+ 
+:STRCPY
+LOAD %31 %0
+while %31 != #0
+    STORE %1 %31
+    INC %1
+    STORE %1 %2 
+    INC %1
+    INC %0
+    LOAD %31 %0
 end
-
-while %3 > %5
-    MOVL %3 0xDEADBEEF
-    CALL %3
-    ADDL %10 %10 %25
-    INC %3
-end
-SUBL %4 %5 %6
-
-
-
-MOVL %0 '_'
-STORE %2 %0
-INC %2
-MOVL %14 0b10001111
-STORE %2 %14
-INC %2
-
-
-
-
-HALT
-
-:output
-DATA 'D'
-DATA 'E'
-DATA 'A'
-DATA 'D'
-DATA 'B'
-DATA 'E'
-DATA 'E'
-DATA 'F'
-DATA #0
-
-
-:PUTSTR
-MOVL %15 .END
-MOVL %16 .PUTSTR_LOOP
-:PUTSTR_LOOP
-MOVL %1 0x0
-LOAD %0 %20
-CMP %1 %0 
-JEQ %15
-STORE %2 %0
-INC %2
-STORE %2 %14
-INC %2
-INC %20
-JMP %16
-:END
 RET
+
+
+:STRCMP
+LOAD %31 %0
+LOAD %30 %1
+while %31 == %30
+    if %31 == 0x0
+        SUBL %0 %31 %30
+        RET
+    end
+    INC %0
+    INC %1
+    LOAD %31 %0
+    LOAD %30 %1
+end
+SUBL %0 %31 %30
+RET
+
+
+
 

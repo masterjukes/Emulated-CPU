@@ -85,6 +85,9 @@ enum OpCode
     JGEI = 0x36,
     JLEI = 0x37,
     
+    CMPI = 0x38,
+    CALLI = 0x39,
+    
     
     //PRIVELAGE INSTRUCITONS
     
@@ -473,9 +476,9 @@ public sealed class Cpu
                 break;
 
             case OpCode.CALL:
-                nextPC += 0;
+                nextPC += 2;
                 registers.SP -= 4;
-                memoryBus.WriteWord(registers.SP, PC + 2);
+                memoryBus.WriteWord(registers.SP, nextPC);
                 nextPC = GetReg(opand1);
                 break;
 
@@ -611,6 +614,31 @@ public sealed class Cpu
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
                 }
+                break;
+            
+            case OpCode.CMPI:
+                nextPC += 6;
+                var cmpimm = BitConverter.ToUInt32(dataBuffer);
+                if (GetReg(opand1) == cmpimm)
+                {
+                    ChangeFlags(ref flags[0], ref flags[5], ref flags[4]);
+                }
+                else if (GetReg(opand1) < cmpimm)
+                {
+                    ChangeFlags(ref flags[3], ref flags[4], ref flags[1]);
+                }
+                else
+                {
+                    ChangeFlags(ref flags[4], ref flags[5], ref flags[1]);
+                }
+                break;
+                
+            
+            case OpCode.CALLI:
+                nextPC += 5;
+                registers.SP -= 4;
+                memoryBus.WriteWord(registers.SP, nextPC);
+                nextPC = BitConverter.ToUInt32(dataBuffer2);
                 break;
                 
                 

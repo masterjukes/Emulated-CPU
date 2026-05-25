@@ -139,6 +139,9 @@ opcode_map = {
     "JLTI":  {"value": 0x35, "operands": ["immediate4"]},
     "JGEI": {"value": 0x36, "operands": ["immediate4"]},
     "JLEI": {"value": 0x37, "operands": ["immediate4"]},
+    
+    "CMPI":  {"value": 0x38, "operands": ["register", "immediate4"]},
+    "CALLI": {"value": 0x39, "operands": ["immediate4"]},
 
     "DATA":   {"value": 0x77, "operands": ["immediate"]},
 }
@@ -285,7 +288,17 @@ class Parser:
     def parse_proginfo(_line: str, line_num: int):
         if _line.startswith("@offset"):
             global mem_offset
-            mem_offset = int(_line.split(" ")[1])
+            mem_offset = int(_line.split()[1])
+        elif _line.startswith("@const"):
+            name = _line.split()[1]
+            value = _line.split()[2]
+            for i, lne in enumerate(temp2):
+                temp2[i] = lne.replace(name, value)
+                
+        elif (_line.startswith("@use")):
+            pass
+            
+            
         else:
             error(f"Error: no known program info found denoted by: {_line}", line_num)
 
@@ -331,6 +344,14 @@ class ParseHLL:
                     regA = exprArg1.strip("%\n")
                     regB = exprArg3.strip("%\n")
                     temporaryInstructionBuffer.append(f"CMP %{regA} %{regB}\n")
+                    temporaryInstructionBuffer.append(f"{jmpCmpOppositeMap[comparison]}I .L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    ParseHLL.exprStack.append("if")
+                if(exprArg1.startswith("%") and not exprArg3.startswith("%")):
+                    regA = exprArg1.strip("%\n")
+                    imm = exprArg3
+                    temporaryInstructionBuffer.append(f"CMPI %{regA} {imm}\n")
                     temporaryInstructionBuffer.append(f"{jmpCmpOppositeMap[comparison]}I .L{ParseHLL.labelsNeededCount}\n")
                     ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
                     ParseHLL.labelsNeededCount += 1
@@ -387,6 +408,18 @@ class ParseHLL:
                     ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
                     ParseHLL.labelsNeededCount += 1
                     ParseHLL.exprStack.append("while")
+                if(exprArg1.startswith("%") and not exprArg3.startswith("%")):
+                    regA = exprArg1.strip("%\n")
+                    imm = exprArg3
+                    temporaryInstructionBuffer.append(f":L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    temporaryInstructionBuffer.append(f"CMPI %{regA} {imm}\n")
+                    temporaryInstructionBuffer.append(f"{jmpCmpOppositeMap[comparison]}I .L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    ParseHLL.exprStack.append("while")
+                    
                     
 
         else:
