@@ -15,13 +15,32 @@ MOVL %20 .output
 MOVL %21 .PUTSTR
 CALL %21
 
+if %3 >= %4
+    MOVL %14 0xDEADBEEF
+    if %3 == %14
+        SUB %3 %4 %5
+    end
+    MUL %1 %2 %3
+else
+ADDL %5 %3 %4
+end
+
+while %3 > %5
+    MOVL %3 0xDEADBEEF
+    CALL %3
+    ADDL %10 %10 %25
+    INC %3
+end
+SUBL %4 %5 %6
+
+
+
 MOVL %0 '_'
 STORE %2 %0
 INC %2
 MOVL %14 0b10001111
 STORE %2 %14
 INC %2
-
 
 
 

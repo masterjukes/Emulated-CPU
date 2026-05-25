@@ -75,6 +75,16 @@ enum OpCode
     INC = 0x2F, // Increment register/memory
     DEC = 0x30, // Decrement register/memory
     
+    //IMMEDIATE JUMPS
+    
+    JMPI = 0x31,
+    JNEI = 0x32,
+    JEQI = 0x33,
+    JGTI = 0x34,
+    JLTI = 0x35,
+    JGEI = 0x36,
+    JLEI = 0x37,
+    
     
     //PRIVELAGE INSTRUCITONS
     
@@ -105,6 +115,7 @@ public sealed class Cpu
     byte[] fetchBuffer = new byte[6];
     
     byte[] dataBuffer = new byte[4];
+    byte[] dataBuffer2 = new byte[4];
 
 
     public static Cpu instance = new Cpu
@@ -219,13 +230,6 @@ public sealed class Cpu
 
     void Execute()
     {
-        
-        if (fetchBuffer.Length < 6)
-        {
-            Console.WriteLine($"ERROR: fetchBuffer length is {fetchBuffer.Length}, expected 6!");
-            return;
-        }
-
         var op = (OpCode)fetchBuffer[0];
         var opand1 = fetchBuffer[1];
         var opand2 = fetchBuffer[2];
@@ -235,6 +239,11 @@ public sealed class Cpu
         dataBuffer[1] = fetchBuffer[3];
         dataBuffer[2] = fetchBuffer[4];
         dataBuffer[3] = fetchBuffer[5];
+        
+        dataBuffer2[0] = fetchBuffer[1];
+        dataBuffer2[1] = fetchBuffer[2];
+        dataBuffer2[2] = fetchBuffer[3];
+        dataBuffer2[3] = fetchBuffer[4];
         
         ref var data = ref dataBuffer;
         
@@ -441,7 +450,6 @@ public sealed class Cpu
                     nextPC = GetReg(opand1);
                     nextPC += 0;
                 }
-
                 break;
 
             case OpCode.JGE:
@@ -452,7 +460,6 @@ public sealed class Cpu
                     nextPC = GetReg(opand1);
                     nextPC += 0;
                 }
-
                 break;
 
             case OpCode.JLE:
@@ -463,9 +470,6 @@ public sealed class Cpu
                     nextPC = GetReg(opand1);
                     nextPC += 0;
                 }
-                
-                
-
                 break;
 
             case OpCode.CALL:
@@ -551,6 +555,67 @@ public sealed class Cpu
                 if (!IsValidRegister(opand1)) return;
                 SetReg(opand1, GetReg(opand1) - 1);
                 break;
+            
+            
+            case OpCode.JMPI:
+                nextPC = BitConverter.ToUInt32(dataBuffer2);
+                break;
+            
+            case OpCode.JEQI:
+                nextPC += 5;
+                if (flags[0])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+                    nextPC += 0;
+                }
+
+                break;
+
+            case OpCode.JNEI:
+                nextPC += 5;
+                if (flags[1])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+                }
+                break;
+
+            case OpCode.JGTI:
+                nextPC += 5;
+                if (flags[4])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+                }
+
+                break;
+
+            case OpCode.JLTI:
+                nextPC += 5;
+                if (flags[3])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+
+                }
+                break;
+
+            case OpCode.JGEI:
+                nextPC += 5;
+                if (flags[5])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+                }
+                break;
+
+            case OpCode.JLEI:
+                nextPC += 5;
+                if (flags[4])
+                {
+                    nextPC = BitConverter.ToUInt32(dataBuffer2);
+                }
+                break;
+                
+                
+                
+            
             
             case OpCode.CSRR:
                 nextPC += 3;

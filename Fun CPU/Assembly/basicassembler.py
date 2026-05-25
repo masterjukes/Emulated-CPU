@@ -4,6 +4,7 @@ import os
 
 import argparse
 from getopt import error
+from inspect import stack
 
 parser = argparse.ArgumentParser(description="Process one or more input files into one output file.")
 parser.add_argument("-S", "--use-stdlib",action="store_true",help="Dont use stdlib")
@@ -130,6 +131,14 @@ opcode_map = {
     # INCREMENT AND DECREMENT
     "INC":   {"value": 0x2F, "operands": ["register"]},
     "DEC":   {"value": 0x30, "operands": ["register"]},
+    
+    "JMPI":  {"value": 0x31, "operands": ["immediate4"]},
+    "JNEI":  {"value": 0x32, "operands": ["immediate4"]},
+    "JEQI":  {"value": 0x33, "operands": ["immediate4"]},
+    "JGTI":  {"value": 0x34, "operands": ["immediate4"]},
+    "JLTI":  {"value": 0x35, "operands": ["immediate4"]},
+    "JGEI": {"value": 0x36, "operands": ["immediate4"]},
+    "JLEI": {"value": 0x37, "operands": ["immediate4"]},
 
     "DATA":   {"value": 0x77, "operands": ["immediate"]},
 }
@@ -184,6 +193,8 @@ class Parser:
                     print(f"Replaced {expected_args[idx]} with {real_args[idx]}")
                     print(f"line: {q_line.replace(expected_args[idx], real_args[idx])}")
                 temp2.append(expanded_line)
+                
+
 
 
 
@@ -290,12 +301,132 @@ class Parser:
         else:
             Parser.parse_instruction(_line, line_num)
 
+class ParseHLL:
+    labelsNeededCount = 0
+    linesAdded = 0
+    labelStack = list()
+    exprStack = list()
+    @staticmethod
+    def parse_line(_line: str, line_num: int):
+        currShift = 0
+        jmpCmpOppositeMap = {">": "JLE", 
+                     "<": "JGE",
+                     ">=": "JLT",
+                     "<=": "JGT",
+                     "==": "JNE",
+                     "!=": "JEQ"}
+        
+        temporaryInstructionBuffer = list()
+
+            
+        
+        
+        if(_line.startswith("if")):
+            exprArg1 = _line.split()[1]
+            comparison = _line.split()[2]
+            exprArg3 = _line.split()[3]
+            
+            if(comparison in jmpCmpOppositeMap):
+                if(exprArg1.startswith("%") and exprArg3.startswith("%")):
+                    regA = exprArg1.strip("%\n")
+                    regB = exprArg3.strip("%\n")
+                    temporaryInstructionBuffer.append(f"CMP %{regA} %{regB}\n")
+                    temporaryInstructionBuffer.append(f"{jmpCmpOppositeMap[comparison]}I .L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    ParseHLL.exprStack.append("if")
+
+                else:
+                    error(f"Error: if statement expects two registers, got {exprArg1} and {exprArg3}", line_num)
+            else:
+                error(f"Error: if statement expects a comparison operator, got {comparison}", line_num)
+        
+        elif(_line.startswith("else")):
+            if(len(ParseHLL.labelStack) > 0):
+                expectedLabel = ParseHLL.labelStack.pop()
+                newLabel = f"L{ParseHLL.labelsNeededCount}"
+                ParseHLL.labelStack.append(newLabel)
+                temporaryInstructionBuffer.append(f"JMPI .{newLabel}\n")
+                ParseHLL.labelsNeededCount += 1
+                temporaryInstructionBuffer.append(f":{expectedLabel}\n")
+            else:
+                error(f"Error: else statement without matching if statement", line_num)
+        
+        
+        elif(_line.startswith("end")):
+            if(len(ParseHLL.labelStack) > 0):
+                if(ParseHLL.exprStack[-1] == "if"):
+                    ParseHLL.exprStack.pop()
+                    expectedLabel = ParseHLL.labelStack.pop()
+                    temporaryInstructionBuffer.append(f":{expectedLabel}\n")
+                elif(ParseHLL.exprStack[-1] == "while"):
+                    ParseHLL.exprStack.pop()
+                    expectedLabel = ParseHLL.labelStack.pop()
+                    expectedLabel2 = ParseHLL.labelStack.pop()
+                    temporaryInstructionBuffer.append(f"JMPI .{expectedLabel2}\n")
+                    temporaryInstructionBuffer.append(f":{expectedLabel}\n")
+                temporaryInstructionBuffer.append("NOP\n")
+                    
+            else:
+                error(f"Error: end statement without matching if statement", line_num)
+                
+        elif _line.startswith("while"):
+            exprArg1 = _line.split()[1]
+            comparison = _line.split()[2]
+            exprArg3 = _line.split()[3]
+            
+            if(comparison in jmpCmpOppositeMap):
+                if(exprArg1.startswith("%") and exprArg3.startswith("%")):
+                    regA = exprArg1.strip("%\n")
+                    regB = exprArg3.strip("%\n")
+                    temporaryInstructionBuffer.append(f":L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    temporaryInstructionBuffer.append(f"CMP %{regA} %{regB}\n")
+                    temporaryInstructionBuffer.append(f"{jmpCmpOppositeMap[comparison]}I .L{ParseHLL.labelsNeededCount}\n")
+                    ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
+                    ParseHLL.labelsNeededCount += 1
+                    ParseHLL.exprStack.append("while")
+                    
+
+        else:
+            return lines
+        
+        
+        lines[line_num + ParseHLL.linesAdded] = temporaryInstructionBuffer[0]
+        for i in range(1, len(temporaryInstructionBuffer)):
+            lines.insert(line_num + i + ParseHLL.linesAdded, temporaryInstructionBuffer[i])
+            
+        ParseHLL.linesAdded += len(temporaryInstructionBuffer)-1
+        return lines
+        
+        
+                    
+                    
+        
 
 
 
+
+
+
+
+preHLLlines = input_file.copy()
 lines = input_file.copy()
-temp = lines.copy()
 shift = 0
+
+for i, line in enumerate(preHLLlines):
+    line = line.replace("    ", "")
+    temp = ParseHLL.parse_line(line, i)
+
+
+
+filer = open("temp.s", "w")
+for line in temp:
+    filer.write(line)
+
+
+
 for i, line in enumerate(lines):
     if line.startswith("%"):
         Parser.parse_macro(line, i)
