@@ -1,2 +1,3 @@
-@stdlib.s
-assemblerTest.s
+vgaconst.s
+main.s
+string.s

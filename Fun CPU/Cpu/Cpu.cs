@@ -221,12 +221,10 @@ public sealed class Cpu
 
 
 
-    void ChangeFlags(ref bool flag1,ref bool flag2, ref bool flag3)
+    void ChangeFlags(int index)
     {
         Array.Fill(flags, false);
-        flag1 = true;
-        flag2 = true;
-        flag3 = true;
+        flags[index] = true;
     }
     
 
@@ -395,16 +393,17 @@ public sealed class Cpu
                 if (!IsValidRegister(opand1) || !IsValidRegister(opand2)) return;
                 if (GetReg(opand1) == GetReg(opand2))
                 {
-                    ChangeFlags(ref flags[0], ref flags[5], ref flags[4]);
+                    ChangeFlags(0);
                 }
                 else if (GetReg(opand1) < GetReg(opand2))
                 {
-                    ChangeFlags(ref flags[3], ref flags[4], ref flags[1]);
+                    ChangeFlags(1);
                 }
                 else
                 {
-                    ChangeFlags(ref flags[4], ref flags[5], ref flags[1]);
+                    ChangeFlags(2);
                 }
+
 
                 break;
 
@@ -428,7 +427,7 @@ public sealed class Cpu
             case OpCode.JNE:
                 nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
-                if (flags[1])
+                if (!flags[0])
                 {
                     nextPC = GetReg(opand1);
                 }
@@ -438,7 +437,7 @@ public sealed class Cpu
             case OpCode.JGT:
                 nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
-                if (flags[4])
+                if (!flags[0] && !flags[1])
                 {
                     nextPC = GetReg(opand1);
                 }
@@ -448,7 +447,7 @@ public sealed class Cpu
             case OpCode.JLT:
                 nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
-                if (flags[3])
+                if (flags[1])
                 {
                     nextPC = GetReg(opand1);
                     nextPC += 0;
@@ -458,7 +457,7 @@ public sealed class Cpu
             case OpCode.JGE:
                 nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
-                if (flags[5])
+                if ((flags[0]) || (!flags[0] && !flags[1]))
                 {
                     nextPC = GetReg(opand1);
                     nextPC += 0;
@@ -468,7 +467,7 @@ public sealed class Cpu
             case OpCode.JLE:
                 nextPC += 2;
                 if (!IsValidRegister(opand1)) return;
-                if (flags[4])
+                if (flags[0] || flags[1])
                 {
                     nextPC = GetReg(opand1);
                     nextPC += 0;
@@ -576,7 +575,7 @@ public sealed class Cpu
 
             case OpCode.JNEI:
                 nextPC += 5;
-                if (flags[1])
+                if (!flags[0])
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
                 }
@@ -584,7 +583,7 @@ public sealed class Cpu
 
             case OpCode.JGTI:
                 nextPC += 5;
-                if (flags[4])
+                if (!flags[0] && !flags[1])
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
                 }
@@ -593,7 +592,7 @@ public sealed class Cpu
 
             case OpCode.JLTI:
                 nextPC += 5;
-                if (flags[3])
+                if (flags[1])
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
 
@@ -602,7 +601,7 @@ public sealed class Cpu
 
             case OpCode.JGEI:
                 nextPC += 5;
-                if (flags[5])
+                if (flags[0] || (!flags[0])&& !flags[1])
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
                 }
@@ -610,7 +609,7 @@ public sealed class Cpu
 
             case OpCode.JLEI:
                 nextPC += 5;
-                if (flags[4])
+                if (flags[0] || flags[1])
                 {
                     nextPC = BitConverter.ToUInt32(dataBuffer2);
                 }
@@ -621,15 +620,15 @@ public sealed class Cpu
                 var cmpimm = BitConverter.ToUInt32(dataBuffer);
                 if (GetReg(opand1) == cmpimm)
                 {
-                    ChangeFlags(ref flags[0], ref flags[5], ref flags[4]);
+                    ChangeFlags(0);
                 }
                 else if (GetReg(opand1) < cmpimm)
                 {
-                    ChangeFlags(ref flags[3], ref flags[4], ref flags[1]);
+                    ChangeFlags(1);
                 }
                 else
                 {
-                    ChangeFlags(ref flags[4], ref flags[5], ref flags[1]);
+                    ChangeFlags(2);
                 }
                 break;
                 

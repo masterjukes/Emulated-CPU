@@ -12,7 +12,7 @@ public class VgaDevice : MMIODevice
 {
     public const int ControlByteSize = 1;
     public const int GraphicModeSize = 1024 * 768 * 2;
-    public const int TextModeSize = 80 * 25 * 2;
+    public const int TextModeSize = 80 * 40 * 2;
     private byte currentTick;
     
     bool cursorBlinking = false;
@@ -30,6 +30,7 @@ public class VgaDevice : MMIODevice
 
     public VgaDevice()
     {
+        
         fonts.AddFontFile("PxPlus_IBM_VGA_8x16.ttf");
         
         textFont = new Font(
@@ -152,7 +153,7 @@ public class VgaDevice : MMIODevice
         byte[] mem = Cpu.instance.memoryBus.dev;
 
         const int columns = 80;
-        const int rows = 25;
+        const int rows = 40;
 
         int charWidth = 8;
         int charHeight = 16;
@@ -162,7 +163,7 @@ public class VgaDevice : MMIODevice
         g.Clear(Color.Black);
 
         g.PixelOffsetMode =
-            System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            System.Drawing.Drawing2D.PixelOffsetMode.None;
 
         g.SmoothingMode =
             System.Drawing.Drawing2D.SmoothingMode.None;
@@ -197,6 +198,11 @@ public class VgaDevice : MMIODevice
                 int px = screenOffsetX + x * charWidth;
                 int py = screenOffsetY + y * charHeight;
 
+                if(x > 0)
+                    px += 1 * x;
+                if (y > 0)
+                    py -= 4 * y;
+                
                 
 
                 
@@ -204,8 +210,8 @@ public class VgaDevice : MMIODevice
                 g.FillRectangle(
                     bgBrush,
                     px,
-                    py,
-                    8,
+                    py-1,
+                    9,
                     12
                 );
 
@@ -218,9 +224,24 @@ public class VgaDevice : MMIODevice
                         GraphicsUnit.Pixel );
                     break;
                 }
+                var original = glyphs[character];
+                var bitmap = (Bitmap)original.Clone();
+
+                Color fgColor = ((SolidBrush)palette[fg]).Color;
+
+                for (int i = 0; i < bitmap.Width; i++)
+                {
+                    for (int j = 0; j < bitmap.Height; j++)
+                    {
+                        if (bitmap.GetPixel(i, j).ToArgb() == Color.White.ToArgb())
+                            bitmap.SetPixel(i, j, fgColor);
+                    }
+                }
+
+
                 
                 g.DrawImage(
-                    glyphs[character],
+                    bitmap,
                     new Rectangle(px, py, 8, 16),
                     0, 0, 8, 16,
                     GraphicsUnit.Pixel );
