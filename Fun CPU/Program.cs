@@ -31,10 +31,11 @@ class Program
                 for (int i = 0; i < 1_000_000; i++)
                 {
                     Cpu.instance.StepClock();
+                    //Console.WriteLine(Cpu.instance.controlStatusRegisters.status.value);
                     //Thread.Sleep(100);
                 }
-                Console.Clear();
-                Console.WriteLine(Cpu.instance.controlStatusRegisters.cycle.value);
+                //Console.Clear();
+                //Console.WriteLine(Cpu.instance.controlStatusRegisters.cycle.value);
             }
         }).Start();
     }
@@ -43,19 +44,21 @@ class Program
     static void DeviceThread()
     {
         var vga = new VgaDevice();
+        var ps2 = new PS2Keyboard();
 
-        new Thread(() =>
+        foreach (var dev in MMIODevice.devices)
         {
-            while (true)
+            new Thread(() =>
             {
-                foreach (var dev in MMIODevice.devices)
+                while (true)
                 {
                     dev.UpdateDevice();
+                    Thread.Sleep((int) dev.updateDeltaTime);
                 }
-
-                Thread.Sleep(16);
-            }
-        }).Start();
+            }).Start();
+        }
+        
+       
     }
 }
 

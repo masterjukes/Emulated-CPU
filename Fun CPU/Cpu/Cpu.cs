@@ -126,7 +126,7 @@ enum OpCode
 
 public sealed class Cpu
 {
-    public CpuPrivelege privilege;
+    public CpuPrivelege privilege = CpuPrivelege.Machine;
     public bool[] flags = new bool[32];
     public uint PC;
     bool halted;
@@ -137,6 +137,11 @@ public sealed class Cpu
     public required MemoryBus memoryBus;
     
     public bool faultPending = false;
+
+    public uint irqPending;
+    public uint previousIrqPending; 
+    public const uint IRQ_TIMER = 1 << 0;
+    public const uint IRQ_KEYBOARD = 1 << 1;
     
     
     byte[] fetchBuffer = new byte[7];
@@ -166,7 +171,7 @@ public sealed class Cpu
             Execute();
 
             fault:
-            if (faultPending)
+            if (faultPending || irqPending != previousIrqPending)
                 HandleTrap();
         }
         catch (Exception e)
@@ -189,9 +194,8 @@ public sealed class Cpu
 
         PC = nextPC;
 
-        controlStatusRegisters.cycle =
-            controlStatusRegisters.cycle with { value = controlStatusRegisters.cycle.value + 1 };
-        
+        controlStatusRegisters.cycle.value += 1;
+
     }
 
     void Fetch()
@@ -215,6 +219,7 @@ public sealed class Cpu
     {
         if (reg > 31)
         {
+            Console.WriteLine("Invalid register");
             Fault.FaultCpu(CpuTrapCause.IllegalInstruction, reg);
             return false;
         }
@@ -704,10 +709,11 @@ public sealed class Cpu
                     Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
                     return;
                 }
-                controlStatusRegisters.CSRWrite(opand1, opand2);
+                controlStatusRegisters.CSRWrite(opand1, BitConverter.ToInt32(dataBuffer, 0));;
                 break;
             
             case OpCode.ECALL:
+                controlStatusRegisters.ip.value = (int)InterruptCause.Software; 
                 Fault.FaultCpu(CpuTrapCause.EnvironmentCallUser, 0);
                 nextPC = PC + 1;
                 break;
@@ -719,7 +725,8 @@ public sealed class Cpu
                     Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
                     return;
                 }
-                privilege = CpuPrivelege.User;
+                controlStatusRegisters.status.value = (int)SetBit((uint)controlStatusRegisters.status.value, 0, GetBit((uint)controlStatusRegisters.status.value, 1)); 
+                privilege = GetBit((uint)controlStatusRegisters.status.value, 2) ? CpuPrivelege.Machine : CpuPrivelege.User;
                 nextPC = (uint) controlStatusRegisters.epc.value;
                 break;
             
@@ -860,25 +867,100 @@ public sealed class Cpu
 
             default:
                 nextPC += 1;
+                Console.WriteLine("Unknown opcode: " + op);
                 Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
                 break;
         }
     }
-
-
+    
+    public static bool GetBit(uint value, int bit)
+    {
+        return (value & (1u << bit)) != 0;
+    }
+    public static uint SetBit(uint value, int bit, bool bitValue)
+    {
+        if(bitValue)
+            return value | (1u << bit);
+        
+        return value & ~(1u << bit);
+    }
     void HandleTrap()
     {
         faultPending = false;
-        if(Fault.cause == CpuTrapCause.EnvironmentCallUser && controlStatusRegisters.ie.value == 0) return; // Interrupts are disabled so just ignore it
+        const int MPIE_BIT = 1;
+        const int MIE_BIT = 0;
+        const int MPP_BIT = 2;
         
-        controlStatusRegisters.epc = controlStatusRegisters.epc with { value = (int)nextPC };
+
         
-        controlStatusRegisters.cause = controlStatusRegisters.cause with { value = (int)Fault.cause };
+        uint status = (uint)controlStatusRegisters.status.value;
 
-        controlStatusRegisters.tval = controlStatusRegisters.tval with { value = Fault.info };
+        bool mie = GetBit(status, MIE_BIT);
+        bool isInterrupt =
+            Fault.cause == CpuTrapCause.Interrupt;
+        
+        bool isException = !isInterrupt;
 
+        // -----------------------------
+        // 1. INTERRUPT HANDLING
+        // -----------------------------
+        
+        
+        if (isInterrupt)
+        {
+            previousIrqPending = irqPending;
+            if (!mie)
+            {
+                Console.WriteLine(controlStatusRegisters.status.value);
+
+                return;
+            }
+            irqPending = 0;
+        }
+         
+        Console.WriteLine("Handling trap");
+        Console.WriteLine("Fault: " + Fault.cause);
+        Console.WriteLine(controlStatusRegisters.tval.value);
+        Console.WriteLine("IP: " + (uint)controlStatusRegisters.ip.value);
+        
+        // -----------------------------
+        // 2. SAVE CONTEXT (COMMON)
+        // -----------------------------
+
+        // Save PC
+        controlStatusRegisters.epc.value = (int)nextPC; 
+
+        // Save cause/tval
+        controlStatusRegisters.cause.value = (int)Fault.cause;
+
+        controlStatusRegisters.tval.value = Fault.info; 
+
+        // -----------------------------
+        // 3. SAVE STATUS (MPIE + MPP)
+        // -----------------------------
+        
+
+
+        // MPIE = MIE
+        status = SetBit(status, MPIE_BIT, mie);
+
+        // MIE = 0 (disable interrupts in handler)
+        status = SetBit(status, MIE_BIT, false);
+
+        // MPP = current privilege
+        var oldMpp = GetBit(status, MPP_BIT);
+        status = SetBit(status, MPP_BIT, (int)privilege > 0);
+
+        controlStatusRegisters.status.value = (int)status; 
+
+        // -----------------------------
+        // 4. SWITCH TO KERNEL MODE
+        // -----------------------------
         privilege = CpuPrivelege.Machine;
 
+        
+        Console.WriteLine((uint)controlStatusRegisters.tvec.value);
+        // Jump to trap handler
         nextPC = (uint)controlStatusRegisters.tvec.value;
     }
 }

@@ -14,8 +14,9 @@ public abstract class MMIODevice
     public int baseAddress; 
     public abstract int size { get; }
     public abstract float updateDeltaTime { get; }
-    public virtual void OnConnect(){}
-    public virtual void OnDisconnect(){}
+    
+    public virtual void WriteByte(uint address, byte value) {}
+    public virtual void ReadByte(uint address) {}
 
     public virtual void UpdateDevice() {}
     

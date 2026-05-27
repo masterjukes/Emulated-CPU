@@ -1,6 +1,6 @@
 ﻿namespace Fun_CPU;
 
-public struct CSR
+public class CSR
 {
     public int value;
     public CpuPrivelege minPrivilege;
@@ -21,7 +21,6 @@ public class CpuCSRs
     public CSR cause   { get => csrFile[2];  set => csrFile[2]  = value; } // Trap cause register. Stores the reason for the trap/exception/interrupt.
     public CSR tval    { get => csrFile[3];  set => csrFile[3]  = value; } // Trap value register. Stores extra fault information (faulting address, instruction, etc.) in a 32-bit word.
     public CSR status  { get => csrFile[5];  set => csrFile[5]  = value; } // CPU status/control flags register. Stores processor state such as current privilege mode and interrupt state. NOT IMPLEMENTED
-    public CSR ie      { get => csrFile[10]; set => csrFile[10] = value; } // Interrupt enable register. If greater than 0, interrupts are treated as enabled.
     public CSR ip      { get => csrFile[11]; set => csrFile[11] = value; } // Interrupt pending register. Indicates whether an interrupt is currently waiting to be handled. NOT IMPLEMENTED
     public CSR satp    { get => csrFile[12]; set => csrFile[12] = value; } // Supervisor address translation and protection register. Controls virtual memory paging and address translation. 
     public CSR scratch { get => csrFile[13]; set => csrFile[13] = value; } // Scratch register for trap handlers or temporary OS/kernel data.
@@ -34,7 +33,11 @@ public class CpuCSRs
     
     public CpuCSRs()
     {
-        csrFile[0] = new CSR(CpuPrivelege.User, true);
+       for(int i = 0; i < csrFile.Length; i++)
+       {
+           ref var csr = ref csrFile[i];
+           csr = new CSR(CpuPrivelege.Machine);
+       }
     }
     
     public void CSRWrite(int index, int value)
@@ -45,9 +48,12 @@ public class CpuCSRs
             Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
             return;
         }
-
+        
+        Console.WriteLine($"Writing CSR {index} to {value}");
         if(!csr.readOnly)
             csr.value = value;
+        
+        Console.WriteLine($"CSR {index} now at {csr.value}");
     }
     
     public uint CSRRead(int index)
@@ -58,7 +64,7 @@ public class CpuCSRs
             Fault.FaultCpu(CpuTrapCause.IllegalInstruction, 0);
             return 0;
         }
-
+        
         return (uint)csr.value;
     }
     

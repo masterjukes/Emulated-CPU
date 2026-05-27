@@ -2,6 +2,7 @@
 
 public enum CpuTrapCause
 {
+    
     InstructionAddressMisaligned,
     InstructionAccessFault,
     IllegalInstruction,
@@ -16,6 +17,8 @@ public enum CpuTrapCause
     EnvironmentCallUser,
     EnvironmentCallSupervisor,
     EnvironmentCallMachine,
+    
+    Interrupt,
 
     InstructionPageFault,
     LoadPageFault,

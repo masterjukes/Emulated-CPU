@@ -7,14 +7,16 @@ public class PS2Keyboard : MMIODevice
 {
     [DllImport("user32.dll")]
     static extern short GetAsyncKeyState(int vKey);
-    
-    class KeyState
+
+    private class KeyState
     {
         public bool down;
         public float timer;
     }
-
-    KeyState[] keys = new KeyState[256];
+    
+    KeyState[] keys = new KeyState[256]
+        .Select(_ => new KeyState())
+        .ToArray();
 
     Queue<byte> fifo = new();
     
@@ -141,6 +143,7 @@ Dictionary<int, byte> scanCodes = new()
 
     public override void UpdateDevice()
     {
+
         PollKeyboard();
         HandleGuestCommands();
         UpdateRegisters();
@@ -161,7 +164,7 @@ Dictionary<int, byte> scanCodes = new()
                 }
                 else
                 {
-                    keys[i].timer -= updateDeltaTime;
+                    keys[i].timer -= updateDeltaTime / 1000f;
 
                     if(keys[i].timer <= 0)
                     {
@@ -221,9 +224,10 @@ Dictionary<int, byte> scanCodes = new()
         
         SetStatusBit(STATUS_OUTPUT_FULL);
         SetStatusBit(STATUS_IRQ_PENDING);
-        
-        Cpu.instance.controlStatusRegisters.ip = Cpu.instance.controlStatusRegisters.ip with { value = (int)InterruptCause.External };
-        Fault.FaultCpu(CpuTrapCause.EnvironmentCallUser, baseAddress);
+
+        Cpu.instance.controlStatusRegisters.ip.value = (int)InterruptCause.External; 
+        Cpu.instance.irqPending |= Cpu.IRQ_KEYBOARD;
+        Fault.FaultCpu(CpuTrapCause.Interrupt, baseAddress);
     }
 
     void HandleGuestCommands()
@@ -263,8 +267,13 @@ Dictionary<int, byte> scanCodes = new()
         }
     }
 
-    public void ConsumeData()
+    public override void ReadByte(uint address)
     {
+        var offset = address - (uint)baseAddress;
+
+        if(offset != REG_DATA)
+            return;
+        
         if(fifo.Count == 0)
             return;
 

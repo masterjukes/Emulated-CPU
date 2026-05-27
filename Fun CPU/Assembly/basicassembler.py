@@ -167,6 +167,13 @@ opcode_map = {
     "SHRLI":  {"value": 0x4F, "operands": ["register", "register", "immediate4"]},
     "NOTLI":  {"value": 0x4D, "operands": ["register", "immediate"]},
     
+    "CSRR":  {"value": 0xF1, "operands": ["register", "immediate"]},
+    "CSRW": {"value": 0xF0, "operands": ["immediate", "register"]},
+    "CSRWI": {"value": 0xF2, "operands": ["immediate", "immediate4"]},
+    
+    "ECALL":  {"value": 0xF4, "operands": []},
+    "ERET": {"value": 0xF3, "operands": []},
+    
     "DATA":   {"value": 0x77, "operands": ["immediate"]},
 }
 label_map = {}
