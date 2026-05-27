@@ -88,6 +88,30 @@ enum OpCode
     CMPI = 0x38,
     CALLI = 0x39,
     
+    ADDI = 0x3A,
+    SUBI = 0x3B,
+    MULI = 0x3C,
+    DIVI = 0x3D,
+    MODI = 0x3E,
+    ANDI = 0x3F,
+    ORI = 0x40,
+    XORI = 0x41,
+    NOTI = 0x42,
+    SHLI = 0x43,
+    SHRI = 0x44,
+    
+    
+    ADDLI = 0x45, 
+    SUBLI = 0x46,
+    MULLI = 0x47,
+    DIVLI = 0x48,
+    MODLI = 0x49,
+    ANDLI = 0x4A,
+    ORLI = 0x4B,
+    XORLI = 0x4C,
+    NOTLI = 0x4D, 
+    SHLLI = 0x4E,  
+    SHRLI = 0x4F, 
     
     //PRIVELAGE INSTRUCITONS
     
@@ -115,10 +139,11 @@ public sealed class Cpu
     public bool faultPending = false;
     
     
-    byte[] fetchBuffer = new byte[6];
+    byte[] fetchBuffer = new byte[7];
     
     byte[] dataBuffer = new byte[4];
     byte[] dataBuffer2 = new byte[4];
+    byte[] dataBuffer3 = new byte[4];
 
 
     public static Cpu instance = new Cpu
@@ -177,6 +202,7 @@ public sealed class Cpu
         fetchBuffer[3] = memoryBus.ReadByte(PC + 3, true);
         fetchBuffer[4] = memoryBus.ReadByte(PC + 4, true);
         fetchBuffer[5] = memoryBus.ReadByte(PC + 5, true);
+        fetchBuffer[6] = memoryBus.ReadByte(PC + 6, true);
         
         
         //Console.Write(PC.ToString("X4") + " ");
@@ -245,6 +271,13 @@ public sealed class Cpu
         dataBuffer2[1] = fetchBuffer[2];
         dataBuffer2[2] = fetchBuffer[3];
         dataBuffer2[3] = fetchBuffer[4];
+        
+        dataBuffer3[0] = fetchBuffer[3];
+        dataBuffer3[1] = fetchBuffer[4];
+        dataBuffer3[2] = fetchBuffer[5];
+        dataBuffer3[3] = fetchBuffer[6];
+        
+        var data3 = (uint) BitConverter.ToInt32(dataBuffer3, 0);
         
         ref var data = ref dataBuffer;
         
@@ -689,7 +722,139 @@ public sealed class Cpu
                 privilege = CpuPrivelege.User;
                 nextPC = (uint) controlStatusRegisters.epc.value;
                 break;
-                
+            
+            
+            
+            case OpCode.ADDI:
+                WriteByteToRegister(opand1,  ReadByteFromRegister(opand2) + opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.SUBI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) - opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.MULI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) * opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.DIVI:
+                if (opand3 == 0)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) / opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.MODI:
+                if (opand3 == 0)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) % opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.ANDI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) & opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.ORI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) | opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.XORI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) ^ opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.NOTI:
+                WriteByteToRegister(opand1, ~opand2);
+                nextPC += 3;
+                break;
+
+            case OpCode.SHLI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) << opand3);
+                nextPC += 4;
+                break;
+
+            case OpCode.SHRI:
+                WriteByteToRegister(opand1, ReadByteFromRegister(opand2) >> opand3);
+                nextPC += 4;
+                break;
+            
+            
+            case OpCode.ADDLI:
+                SetReg(opand1, GetReg(opand2) + data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.SUBLI:
+                SetReg(opand1, GetReg(opand2) - data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.MULLI:
+                SetReg(opand1, GetReg(opand2) * data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.DIVLI:
+                if (data3 == 0)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                SetReg(opand1, GetReg(opand2) / data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.MODLI:
+                if (data3 == 0)
+                {
+                    Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
+                    return;
+                }
+                SetReg(opand1, GetReg(opand2) % data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.ANDLI:
+                SetReg(opand1, GetReg(opand2) & data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.ORLI:
+                SetReg(opand1, GetReg(opand2) | data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.XORLI:
+                SetReg(opand1, GetReg(opand2) ^ data3);
+                nextPC += 7;
+                break;
+
+            case OpCode.NOTLI:
+                SetReg(opand1, ~data3);
+                nextPC += 6;
+                break;
+
+            case OpCode.SHLLI:
+                SetReg(opand1, GetReg(opand2) << (int)data3);
+                nextPC += 7;
+                break;
+            
+            case OpCode.SHRLI:
+                SetReg(opand1, GetReg(opand2) >> (int)data3);
+                nextPC += 7;
+                break;   
                 
                 
 

@@ -22,6 +22,13 @@ public enum CpuTrapCause
     StorePageFault
 }
 
+public enum InterruptCause
+{
+    Software = 0xFB,
+    Timer = 0x5A,
+    External = 0xB7,
+}
+
 
 
 public class Fault

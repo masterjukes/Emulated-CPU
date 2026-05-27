@@ -142,7 +142,31 @@ opcode_map = {
     
     "CMPI":  {"value": 0x38, "operands": ["register", "immediate4"]},
     "CALLI": {"value": 0x39, "operands": ["immediate4"]},
+    
+    "ADDI":  {"value": 0x3A, "operands": ["register", "register", "immediate"]},
+    "SUBI":  {"value": 0x3B, "operands": ["register", "register", "immediate"]},
+    "MULI":  {"value": 0x3C, "operands": ["register", "register", "immediate"]},
+    "DIVI":  {"value": 0x3D, "operands": ["register", "register", "immediate"]},
+    "MODI":  {"value": 0x3E, "operands": ["register", "register", "immediate"]},
+    "ANDI": {"value": 0x3F, "operands": ["register", "register", "immediate"]},
+    "ORI":  {"value": 0x40, "operands": ["register", "register", "immediate"]},
+    "XORI": {"value": 0x41, "operands": ["register", "register", "immediate"]},
+    "SHLI":  {"value": 0x43, "operands": ["register", "register", "immediate"]},
+    "SHRI":  {"value": 0x44, "operands": ["register", "register", "immediate"]},
+    "NOTI":  {"value": 0x42, "operands": ["register", "immediate"]},
 
+    "ADDLI":  {"value": 0x45, "operands": ["register", "register", "immediate4"]},
+    "SUBLI":  {"value": 0x46, "operands": ["register", "register", "immediate4"]},
+    "MULLI":  {"value": 0x47, "operands": ["register", "register", "immediate4"]},
+    "DIVLI":  {"value": 0x48, "operands": ["register", "register", "immediate4"]},
+    "MODLI":  {"value": 0x49, "operands": ["register", "register", "immediate4"]},
+    "ANDLI": {"value": 0x4A, "operands": ["register", "register", "immediate4"]},
+    "ORLI":  {"value": 0x4B, "operands": ["register", "register", "immediate4"]},
+    "XORLI": {"value": 0x4C, "operands": ["register", "register", "immediate4"]},
+    "SHLLI":  {"value": 0x4E, "operands": ["register", "register", "immediate4"]},
+    "SHRLI":  {"value": 0x4F, "operands": ["register", "register", "immediate4"]},
+    "NOTLI":  {"value": 0x4D, "operands": ["register", "immediate"]},
+    
     "DATA":   {"value": 0x77, "operands": ["immediate"]},
 }
 label_map = {}
