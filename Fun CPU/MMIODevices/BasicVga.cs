@@ -129,25 +129,21 @@ public class VgaDevice : MMIODevice
                 var bgColor = Palette[bg];
 
                 int screenOffsetX = 0;
-                int screenOffsetY = 1;
+                int screenOffsetY = 0;
 
                 int px = screenOffsetX + x * charWidth;
                 int py = screenOffsetY + y * charHeight;
+                
 
-                if (x > 0)
-                    px += 1 * x;
-                if (y > 0)
-                    py -= 4 * y;
-
-                FillRect(buf, Screen.TextWidth, px, py - 1, 9, 12, bgColor);
+                FillRect(buf, Screen.TextWidth, px, py, 8, 16, bgColor);
 
                 if (cursorBlinking && blink && shouldBlink)
                 {
-                    BlitGlyph(buf, Screen.TextWidth, glyphs[32], px, py, fgColor);
-                    break;
+                    BlitGlyph(buf, Screen.TextWidth, glyphs[32], px, py+1, fgColor);
+                    continue;
                 }
 
-                BlitGlyph(buf, Screen.TextWidth, glyphs[character], px, py, fgColor);
+                BlitGlyph(buf, Screen.TextWidth, glyphs[character], px, py+1, fgColor);
             }
         }
     }
