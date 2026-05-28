@@ -17,14 +17,14 @@
           "C:\\Users\\alfie\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net9.0-windows"
+          "net9.0"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net9.0-windows7.0": {
-            "targetAlias": "net9.0-windows",
+          "net9.0": {
+            "targetAlias": "net9.0",
             "projectReferences": {}
           }
         },
@@ -41,20 +41,16 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net9.0-windows7.0": {
-          "targetAlias": "net9.0-windows",
+        "net9.0": {
+          "targetAlias": "net9.0",
           "dependencies": {
-            "SDL2-CS": {
+            "ppy.SDL2-CS": {
               "target": "Package",
-              "version": "[2.0.0, )"
+              "version": "[1.0.82, )"
             },
-            "sdl2": {
+            "sdl2.v140.redist": {
               "target": "Package",
-              "version": "[2.0.5, )"
-            },
-            "sdl2_ttf.v140": {
-              "target": "Package",
-              "version": "[2.0.14, )"
+              "version": "[2.0.4, )"
             }
           },
           "imports": [
@@ -71,12 +67,14 @@
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
-            },
-            "Microsoft.WindowsDesktop.App.WindowsForms": {
-              "privateAssets": "none"
             }
           },
           "runtimeIdentifierGraphPath": "C:\\Users\\alfie\\.dotnet\\sdk\\9.0.303/PortableRuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x64": {
+          "#import": []
         }
       }
     }

@@ -1,4 +1,7 @@
-﻿namespace Fun_CPU.Vga;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Fun_CPU.Vga;
 
 public abstract class MMIODevice
 {

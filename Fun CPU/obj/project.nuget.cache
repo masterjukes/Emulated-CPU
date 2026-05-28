@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "46Plv6cPuyc=",
+  "dgSpecHash": "fVbNoTFsQZE=",
   "success": true,
   "projectFilePath": "C:\\Users\\alfie\\RiderProjects\\Fun CPU\\Fun CPU\\Fun CPU.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\alfie\\.nuget\\packages\\freetype.redist\\2.6.2.1\\freetype.redist.2.6.2.1.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2\\2.0.5\\sdl2.2.0.5.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2-cs\\2.0.0\\sdl2-cs.2.0.0.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2.redist\\2.0.5\\sdl2.redist.2.0.5.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2.v140.redist\\2.0.4\\sdl2.v140.redist.2.0.4.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2_ttf.v140\\2.0.14\\sdl2_ttf.v140.2.0.14.nupkg.sha512",
-    "C:\\Users\\alfie\\.nuget\\packages\\sdl2_ttf.v140.redist\\2.0.14\\sdl2_ttf.v140.redist.2.0.14.nupkg.sha512"
+    "C:\\Users\\alfie\\.nuget\\packages\\ppy.sdl2-cs\\1.0.82\\ppy.sdl2-cs.1.0.82.nupkg.sha512",
+    "C:\\Users\\alfie\\.nuget\\packages\\sdl2.v140.redist\\2.0.4\\sdl2.v140.redist.2.0.4.nupkg.sha512"
   ],
   "logs": []
 }

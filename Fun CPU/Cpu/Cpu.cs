@@ -867,7 +867,7 @@ public sealed class Cpu
 
             default:
                 nextPC += 1;
-                Console.WriteLine("Unknown opcode: " + op);
+
                 Fault.FaultCpu(CpuTrapCause.IllegalInstruction, (int) op);
                 break;
         }
@@ -908,20 +908,15 @@ public sealed class Cpu
         
         if (isInterrupt)
         {
-            previousIrqPending = irqPending;
             if (!mie)
             {
-                Console.WriteLine(controlStatusRegisters.status.value);
-
                 return;
             }
             irqPending = 0;
+            previousIrqPending = 0;
         }
          
-        Console.WriteLine("Handling trap");
-        Console.WriteLine("Fault: " + Fault.cause);
-        Console.WriteLine(controlStatusRegisters.tval.value);
-        Console.WriteLine("IP: " + (uint)controlStatusRegisters.ip.value);
+
         
         // -----------------------------
         // 2. SAVE CONTEXT (COMMON)
@@ -959,7 +954,7 @@ public sealed class Cpu
         privilege = CpuPrivelege.Machine;
 
         
-        Console.WriteLine((uint)controlStatusRegisters.tvec.value);
+
         // Jump to trap handler
         nextPC = (uint)controlStatusRegisters.tvec.value;
     }

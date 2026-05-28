@@ -1,4 +1,6 @@
-﻿using Fun_CPU;
+﻿using System;
+using System.IO;
+using Fun_CPU;
 using Fun_CPU.Vga;
 
 
@@ -75,9 +77,19 @@ public sealed class MemoryBus
     
     public MemoryBus()
     {
-        var romData = File.ReadAllBytes("rom.bin");
-        for(int i = 0; i < romData.Length; i++)
-            rom[i] = romData[i];
+        string romPath = Path.Combine(AppContext.BaseDirectory, "rom.bin");
+        if (!File.Exists(romPath))
+            throw new FileNotFoundException(
+                $"CPU ROM image not found at '{romPath}'. " +
+                "Build it with: python Assembly/basicassembler.py Assembly/clogs rom.bin",
+                romPath);
+
+        var romData = File.ReadAllBytes(romPath);
+        if (romData.Length > rom.Length)
+            throw new InvalidOperationException(
+                $"rom.bin is {romData.Length} bytes but ROM region only fits {rom.Length} bytes.");
+
+        Array.Copy(romData, rom, romData.Length);
     }
     
 

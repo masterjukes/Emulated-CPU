@@ -1,4 +1,6 @@
-﻿namespace Fun_CPU;
+﻿using System;
+
+namespace Fun_CPU;
 
 public class CSR
 {

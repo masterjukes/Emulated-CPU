@@ -379,7 +379,7 @@ class ParseHLL:
                     ParseHLL.labelStack.append(f"L{ParseHLL.labelsNeededCount}")
                     ParseHLL.labelsNeededCount += 1
                     ParseHLL.exprStack.append("if")
-                if(exprArg1.startswith("%") and not exprArg3.startswith("%")):
+                elif(exprArg1.startswith("%") and not exprArg3.startswith("%")):
                     regA = exprArg1.strip("%\n")
                     imm = exprArg3
                     temporaryInstructionBuffer.append(f"CMPI %{regA} {imm}\n")
@@ -452,7 +452,16 @@ class ParseHLL:
                     ParseHLL.exprStack.append("while")
                     
                     
-
+        elif _line.startswith("STRING"):
+            string = _line.split("\"")[1]
+            string = string.replace("\"", "")
+            
+            for i in range(len(string)):
+                char = string[i]
+                if(char == " "):
+                    temporaryInstructionBuffer.append(f"DATA 0x20\n")
+                else:
+                    temporaryInstructionBuffer.append(f"DATA '{char}'\n")
         else:
             return lines
         
