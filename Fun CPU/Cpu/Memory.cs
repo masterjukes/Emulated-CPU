@@ -106,9 +106,16 @@ public sealed class MemoryBus
             return ram[paddr];
         if(romRegion)
             return rom[paddr - 0x7FFF0000];
-        if(devRegion)
+        if (devRegion)
+        {
+            
+            foreach (var i in MMIODevice.devices)
+            {
+                i.ReadByte(paddr - 0xF0000000);
+            }
             return dev[paddr - 0xF0000000];
-        
+        }
+
         Fault.FaultCpu(CpuTrapCause.LoadAccessFault, (int)vaddr);
         return 0;
     }
@@ -150,10 +157,7 @@ public sealed class MemoryBus
             return rom[paddr - 0x7FFF0000] | (uint)rom[paddr - 0x7FFF0000 + 1] << 8 | (uint)rom[paddr - 0x7FFF0000 + 2] << 16 | (uint)rom[paddr - 0x7FFF0000 + 3] << 24;
         if (devRegion)
         {
-            foreach (var i in MMIODevice.devices)
-            {
-                i.ReadByte(paddr - 0xF0000000);
-            }
+
             return dev[paddr - 0xF0000000] | (uint)dev[paddr - 0xF0000000 + 1] << 8 |
                    (uint)dev[paddr - 0xF0000000 + 2] << 16 | (uint)dev[paddr - 0xF0000000 + 3] << 24;
         }

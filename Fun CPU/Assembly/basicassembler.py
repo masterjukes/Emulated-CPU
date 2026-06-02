@@ -361,6 +361,8 @@ class ParseHLL:
                      "!=": "JEQ"}
         
         temporaryInstructionBuffer = list()
+        
+        functions = {}
 
             
         
@@ -462,6 +464,7 @@ class ParseHLL:
                     temporaryInstructionBuffer.append(f"DATA 0x20\n")
                 else:
                     temporaryInstructionBuffer.append(f"DATA '{char}'\n")
+                 
         else:
             return lines
         

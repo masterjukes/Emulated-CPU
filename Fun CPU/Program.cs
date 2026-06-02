@@ -38,6 +38,7 @@ class Program
     {
         _ = new VgaDevice();
         _ = new PS2Keyboard();
+        _ = new InterruptController();
 
         foreach (var dev in MMIODevice.devices)
         {
