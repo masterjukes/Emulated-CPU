@@ -142,6 +142,7 @@ public sealed class Cpu
     public uint previousIrqPending; 
     public const uint IRQ_TIMER = 1 << 0;
     public const uint IRQ_KEYBOARD = 1 << 1;
+    public const uint IRQ_DISK0 = 1 << 2;
     
     
     byte[] fetchBuffer = new byte[7];

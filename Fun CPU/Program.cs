@@ -39,6 +39,7 @@ class Program
         _ = new VgaDevice();
         _ = new PS2Keyboard();
         _ = new InterruptController();
+        _ = new DiskController();
 
         foreach (var dev in MMIODevice.devices)
         {

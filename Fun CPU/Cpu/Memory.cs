@@ -68,7 +68,6 @@ public sealed class MemoryBus
 {
     
     private readonly MMU mmu = new();
-
     public MMU MMU => mmu;
 
     byte[] ram = new byte[64 * 1024 * 1024];
@@ -91,12 +90,48 @@ public sealed class MemoryBus
 
         Array.Copy(romData, rom, romData.Length);
     }
-    
 
+    public unsafe byte* GetAddrPointer(uint vaddr)
+    {
+        
+        uint paddr = mmu.Translate(vaddr, MMU.AccessType.Read);
+        
+        var ramRegion = paddr < 0x4000000;
+        var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
+        var devRegion = paddr >= 0xF0000000 && paddr < 0xFFFFFFFF;
+
+        if (ramRegion)
+        {
+            fixed (byte* ptr = &ram[paddr])
+            {
+                return ptr;
+            }
+        }
+
+        if (romRegion)
+        {
+            fixed (byte* ptr = &rom[paddr - 0x7FFF0000])
+            {
+                return ptr;
+            }
+        }
+
+        if (devRegion)
+        {
+            fixed (byte* ptr = &dev[paddr - 0xF0000000])
+            {
+                return ptr;
+            }
+        }
+        
+        return null;
+    }
     
     public byte ReadByte(uint vaddr, bool willExecute = false)
     {
         uint paddr = mmu.Translate(vaddr, willExecute ? MMU.AccessType.Execute : MMU.AccessType.Read);
+        
+        
         
         var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
@@ -123,6 +158,7 @@ public sealed class MemoryBus
     public void WriteByte(uint vaddr, byte value)
     {
         uint paddr = mmu.Translate(vaddr, MMU.AccessType.Write);
+        
         
         var ramRegion = paddr < 0x4000000;
         var romRegion = paddr >= 0x7FFF0000 && paddr < 0x800FFFFF;
